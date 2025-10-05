@@ -1,7 +1,11 @@
 import Head from 'next/head'
 import Link from 'next/link'
+import { trpc } from '@/utils/trpc'
+import TableComponent from '@/components/TableComponent'
 
 export default function ProductsPage() {
+  const { data: products, isLoading } = trpc.product.getAll.useQuery({ limit: 20, cursor: "cmgd9onzp0012f9706ajsnge5" })
+  console.log(products)
   return (
     <>
       <Head>
@@ -13,20 +17,20 @@ export default function ProductsPage() {
           <Link href="/">← Back to Home</Link>
         </div>
 
-        <h1 style={{ fontSize: '2rem', marginBottom: '2rem' }}>Products</h1>
+        <h1 className='font-sans'>Products</h1>
 
-        <p style={{ color: '#666', marginBottom: '2rem' }}>
-          TODO: Build the product list page with:
-        </p>
-
-        <ul style={{ lineHeight: '2', color: '#666' }}>
-          <li>Data table with pagination</li>
-          <li>Search and filter functionality</li>
-          <li>Create/Edit product modal/dialog</li>
-          <li>Product detail view showing stock across locations</li>
-          <li>Delete confirmation</li>
-        </ul>
+        {!isLoading && <TableComponent data={products?.products || []} />}
       </main>
     </>
   )
 }
+
+
+/* 
+  TODO: 
+    <li>Data table with pagination</li>
+    <li>Search and filter functionality</li>
+    <li>Create/Edit product modal/dialog</li>
+    <li>Product detail view showing stock across locations</li>
+    <li>Delete confirmation</li>
+*/
