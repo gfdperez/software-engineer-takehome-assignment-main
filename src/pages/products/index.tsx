@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { useState } from 'react'
 import { trpc } from '@/utils/trpc'
 import TableComponent from '@/components/TableComponent'
-import { Button, FormControl, InputLabel, MenuItem, NativeSelect, Select } from '@mui/material'
+import { Button, FormControl, InputLabel, MenuItem, NativeSelect, OutlinedInput, Select } from '@mui/material'
 import { dataTagErrorSymbol } from '@tanstack/react-query'
 
 export default function ProductsPage() {
@@ -53,6 +53,14 @@ export default function ProductsPage() {
         </div>
 
         <h1 className='font-sans'>Products</h1>
+
+        <form noValidate autoComplete="off">
+          <FormControl sx={{ width: '75%' }}>
+            <OutlinedInput placeholder="Search Product (Name or SKU)" name='search' />
+          </FormControl>
+          <Button variant="contained" onClick={() => setSearch((document.querySelector('input[name="search"]') as HTMLInputElement).value)}>Search</Button>
+        </form>
+
 
         {isLoading && <div>Loading...</div>}
         {!isLoading && <TableComponent data={products?.products || []} />}
