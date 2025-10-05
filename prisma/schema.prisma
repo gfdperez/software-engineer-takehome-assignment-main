@@ -1,0 +1,100 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// Product model
+model Product {
+  id          String   @id @default(cuid())
+  name        String
+  sku         String   @unique
+  description String?
+  price       Float
+  barcode     String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  deletedAt   DateTime? // Soft delete field
+
+  // Relations
+  stockLevels StockLevel[]
+
+  @@index([sku])
+  @@index([deletedAt])
+}
+
+// Location model
+model InventoryLocation {
+  id            String   @id @default(cuid())
+  name          String   @unique
+  address       String?
+  contactPerson String?
+  contactNumber String?
+  notes         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  deletedAt     DateTime? // Soft delete field
+
+  // Relations
+  stockLevels StockLevel[]
+  stocktakes  Stocktake[]
+
+  @@index([deletedAt])
+}
+
+// Stock levels per product per location
+model StockLevel {
+  id           String   @id @default(cuid())
+  quantity     Int      @default(0)
+  minThreshold Int?     // Low stock alert threshold
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  productId  String
+  product    Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  locationId String
+  location   InventoryLocation @relation(fields: [locationId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, locationId])
+  @@index([productId])
+  @@index([locationId])
+}
+
+// Stocktake models
+model Stocktake {
+  id          String    @id @default(cuid())
+  startedAt   DateTime  @default(now())
+  completedAt DateTime?
+  countedBy   String?
+  notes       String?
+
+  // Relations
+  locationId String
+  location   InventoryLocation @relation(fields: [locationId], references: [id])
+
+  items StocktakeItem[]
+
+  @@index([locationId])
+}
+
+model StocktakeItem {
+  id              String @id @default(cuid())
+  systemQuantity  Int    // Stock level at time of stocktake
+  countedQuantity Int?   // Actual counted quantity
+  variance        Int?   // Calculated: countedQuantity - systemQuantity
+  productSku      String // Store SKU for reference
+  productName     String // Store name for reference
+
+  // Relations
+  stocktakeId String
+  stocktake   Stocktake @relation(fields: [stocktakeId], references: [id], onDelete: Cascade)
+
+  @@index([stocktakeId])
+}
