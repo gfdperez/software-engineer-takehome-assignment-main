@@ -3,14 +3,15 @@ import Link from 'next/link'
 import { useState } from 'react'
 import { trpc } from '@/utils/trpc'
 import TableComponent from '@/components/TableComponent'
-import { Button, FormControl, InputLabel, MenuItem, NativeSelect, OutlinedInput, Select } from '@mui/material'
-import { dataTagErrorSymbol } from '@tanstack/react-query'
+import { Button, FormControl, InputLabel, MenuItem, OutlinedInput, Select, Skeleton } from '@mui/material'
+import TableSkeletonLoader from '@/components/TableSkeletonLoader'
 
 export default function ProductsPage() {
   const [search, setSearch] = useState('')
   const [limit, setLimit] = useState(3)
   const [cursor, setCursor] = useState<string | undefined>(undefined)
   const [prevCursors, setPrevCursors] = useState<string[]>([])
+  const [dirtySearch, setDirtySearch] = useState('')
 
   console.log('Search:', search)
   console.log('Limit:', limit)
@@ -52,38 +53,43 @@ export default function ProductsPage() {
           <Link href="/">← Back to Home</Link>
         </div>
 
-        <h1 className='font-sans'>Products</h1>
+        <h1 className='font-sans text-4xl font-bold mb-8'>Products</h1>
+        
 
-        <form noValidate autoComplete="off">
-          <FormControl sx={{ width: '75%' }}>
-            <OutlinedInput placeholder="Search Product (Name or SKU)" name='search' />
+        <form noValidate autoComplete="off" className='flex flex-col gap-2 sm:flex-row sm:items-center mb-4'>
+          <FormControl size='small' sx={{ width: "100%" }}>
+            <OutlinedInput placeholder="Search Product (Name or SKU)" name='search' value={dirtySearch} onChange={(e) => setDirtySearch(e.target.value)} />
           </FormControl>
-          <Button variant="contained" onClick={() => setSearch((document.querySelector('input[name="search"]') as HTMLInputElement).value)}>Search</Button>
+          <Button variant="contained" onClick={() => setSearch(dirtySearch !== '' ? dirtySearch : '')}>Search</Button>
         </form>
 
 
-        {isLoading && <div>Loading...</div>}
-        {!isLoading && <TableComponent data={products?.products || []} />}
+        {isLoading ? 
+          (<TableSkeletonLoader columns={5} />) :
+          (<>
+            <TableComponent data={products?.products || []} />
+            <div className='flex items-center gap-2 mt-4 justify-end'>
+              <FormControl size='small'>
+                <InputLabel id="demo-simple-select-label">Rows</InputLabel>
+                <Select
+                  labelId="demo-simple-select-label"
+                  id="demo-simple-select"
+                  defaultValue={3}
+                  value={limit}
+                  label="Rows per page"
+                  onChange={(e) => setLimit(Number(e.target.value))}
+                >
+                  <MenuItem value={3}>3</MenuItem>
+                  <MenuItem value={8}>8</MenuItem>
+                  <MenuItem value={10}>10</MenuItem>
+                </Select>
+              </FormControl>
 
-        <FormControl>
-          <InputLabel id="demo-simple-select-label">Rows</InputLabel>
-          <Select
-            labelId="demo-simple-select-label"
-            id="demo-simple-select"
-            defaultValue={3}
-            value={limit}
-            label="Rows per page"
-            onChange={(e) => setLimit(Number(e.target.value))}
-          >
-            <MenuItem value={3}>3 per page</MenuItem>
-            <MenuItem value={8}>8 per page</MenuItem>
-            <MenuItem value={10}>10 per page</MenuItem>
-          </Select>
-        </FormControl>
-
-        <Button variant="outlined" onClick={handlePrevPage}>Prev</Button>
-        <Button variant="contained" onClick={handleNextPage}>Next</Button>
-
+              <Button variant="outlined" onClick={handlePrevPage}>Prev</Button>
+              <Button variant="contained" onClick={handleNextPage}>Next</Button>
+            </div>
+          </>)
+        }
       </main>
     </>
   )
