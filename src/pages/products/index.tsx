@@ -5,6 +5,8 @@ import { trpc } from '@/utils/trpc'
 import TableComponent from '@/components/TableComponent'
 import { Button, FormControl, InputLabel, MenuItem, OutlinedInput, Select, Skeleton } from '@mui/material'
 import TableSkeletonLoader from '@/components/TableSkeletonLoader'
+import AddCircleIcon from '@mui/icons-material/AddCircle';
+import ProductsFormModal from '@/components/productsComponent/productsFormModal'
 
 export default function ProductsPage() {
   const [search, setSearch] = useState('')
@@ -12,6 +14,7 @@ export default function ProductsPage() {
   const [cursor, setCursor] = useState<string | undefined>(undefined)
   const [prevCursors, setPrevCursors] = useState<string[]>([])
   const [dirtySearch, setDirtySearch] = useState('')
+  const [openCreateModal, setOpenCreateModal] = useState(false)
 
   console.log('Search:', search)
   console.log('Limit:', limit)
@@ -53,14 +56,18 @@ export default function ProductsPage() {
           <Link href="/">← Back to Home</Link>
         </div>
 
-        <h1 className='font-sans text-4xl font-bold mb-8'>Products</h1>
-        
+        <div className='flex flex-col items-center sm:flex-row sm:justify-between'>
+          <h1 className='font-sans text-4xl font-bold sm:mb-8'>Products</h1>
+          <Button variant="text" startIcon={<AddCircleIcon />} sx={{ mb: 2 }} onClick={() => setOpenCreateModal(true)}>
+            Add Product
+          </Button>
+        </div>
 
         <form noValidate autoComplete="off" className='flex flex-col gap-2 sm:flex-row sm:items-center mb-4'>
           <FormControl size='small' sx={{ width: "100%" }}>
             <OutlinedInput placeholder="Search Product (Name or SKU)" name='search' value={dirtySearch} onChange={(e) => setDirtySearch(e.target.value)} />
           </FormControl>
-          <Button variant="contained" onClick={() => setSearch(dirtySearch !== '' ? dirtySearch : '')}>Search</Button>
+          <Button variant="outlined" onClick={() => setSearch(dirtySearch !== '' ? dirtySearch : '')}>Search</Button>
         </form>
 
 
@@ -90,6 +97,10 @@ export default function ProductsPage() {
             </div>
           </>)
         }
+
+        {openCreateModal && (
+          <ProductsFormModal open={openCreateModal} onClose={() => setOpenCreateModal(false)} />
+        )}
       </main>
     </>
   )

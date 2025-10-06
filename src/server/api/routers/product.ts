@@ -1,16 +1,15 @@
-import { z } from 'zod'
 import { createTRPCRouter, publicProcedure } from '@/server/api/trpc'
+import { 
+  createProductSchema, 
+  updateProductSchema, 
+  getProductByIdSchema, 
+  getProductsSchema 
+} from '@/schemas/productSchema'
 
 export const productRouter = createTRPCRouter({
   // Get all products (excluding soft-deleted)
   getAll: publicProcedure
-    .input(
-      z.object({
-        search: z.string().optional(),
-        limit: z.number().min(1).max(100).default(10),
-        cursor: z.string().optional(),
-      })
-    )
+    .input(getProductsSchema)
     .query(async ({ ctx, input }) => {
       const { search, limit, cursor } = input
 
@@ -50,7 +49,7 @@ export const productRouter = createTRPCRouter({
 
   // Get single product by ID
   getById: publicProcedure
-    .input(z.object({ id: z.string() }))
+    .input(getProductByIdSchema)
     .query(async ({ ctx, input }) => {
       return ctx.prisma.product.findFirst({
         where: {
@@ -74,15 +73,7 @@ export const productRouter = createTRPCRouter({
 
   // Create a new product
   create: publicProcedure
-    .input(
-      z.object({
-        name: z.string().min(1),
-        sku: z.string().min(1),
-        description: z.string().optional(),
-        price: z.number().positive(),
-        barcode: z.string().optional(),
-      })
-    )
+    .input(createProductSchema)
     .mutation(async ({ ctx, input }) => {
       return ctx.prisma.product.create({
         data: input,
@@ -91,16 +82,7 @@ export const productRouter = createTRPCRouter({
 
   // Update a product
   update: publicProcedure
-    .input(
-      z.object({
-        id: z.string(),
-        name: z.string().min(1).optional(),
-        sku: z.string().min(1).optional(),
-        description: z.string().optional(),
-        price: z.number().positive().optional(),
-        barcode: z.string().optional(),
-      })
-    )
+    .input(updateProductSchema)
     .mutation(async ({ ctx, input }) => {
       const { id, ...productData } = input
 
@@ -112,7 +94,7 @@ export const productRouter = createTRPCRouter({
 
   // Soft delete a product
   delete: publicProcedure
-    .input(z.object({ id: z.string() }))
+    .input(getProductByIdSchema)
     .mutation(async ({ ctx, input }) => {
       return ctx.prisma.product.update({
         where: { id: input.id },
