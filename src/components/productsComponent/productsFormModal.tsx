@@ -18,17 +18,18 @@ interface ProductsFormModalProps {
   open: boolean
   onClose: () => void
   onSuccess?: () => void
+  onRefresh?: () => void
 }
 
 export default function ProductsFormModal({ 
   open, 
   onClose, 
-  onSuccess 
+  onSuccess,
+  onRefresh
 }: ProductsFormModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [inputError, setInputError] = useState<string | null>(null);
   
-  // Use the shared schema with react-hook-form
   const {
     register,
     handleSubmit,
@@ -38,30 +39,25 @@ export default function ProductsFormModal({
     resolver: zodResolver(createProductSchema),
   })
 
-  // tRPC mutation
   const createProductMutation = trpc.product.create.useMutation({
     onSuccess: (result) => {
-      // Check if the result indicates success
       if (result.success) {
         reset()
         onSuccess?.()
+        onRefresh?.()
         onClose()
         setIsSubmitting(false)
       } else {
-        // Handle returned error (not thrown error)
         setInputError(result.error || 'An error occurred')
         setIsSubmitting(false)
       }
     },
     onError: (error) => {
-      // This should rarely be called now since we return errors instead of throwing
       setInputError(error.message);
       console.error('Unexpected error creating product:', error)
       setIsSubmitting(false)
     },
   })
-
-  console.log("==========> createProductMutation:", createProductMutation);
 
   const onSubmit = (data: CreateProductInput) => {
     setInputError(null);

@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { useState } from 'react'
 import { trpc } from '@/utils/trpc'
 import TableComponent from '@/components/TableComponent'
-import { Button, FormControl, InputLabel, MenuItem, OutlinedInput, Select, Skeleton } from '@mui/material'
+import { Button, FormControl, InputLabel, MenuItem, OutlinedInput, Select } from '@mui/material'
 import TableSkeletonLoader from '@/components/TableSkeletonLoader'
 import AddCircleIcon from '@mui/icons-material/AddCircle';
 import ProductsFormModal from '@/components/productsComponent/productsFormModal'
@@ -16,35 +16,31 @@ export default function ProductsPage() {
   const [dirtySearch, setDirtySearch] = useState('')
   const [openCreateModal, setOpenCreateModal] = useState(false)
 
-  console.log('Search:', search)
-  console.log('Limit:', limit)
-  console.log('Cursor:', cursor)
-  console.log('PrevCursors:', prevCursors)
-  // tRPC query automatically refetches when search, limit, or cursor changes
+  const utils = trpc.useUtils()
   const { data: products, isLoading } = trpc.product.getAll.useQuery({ 
     limit, 
     cursor,
     search: search.trim() || undefined 
   })
 
+  const handleRefreshProducts = () => {
+    utils.product.getAll.invalidate()
+    setCursor(undefined)
+    setPrevCursors([])
+  }
+
   const handleNextPage = () => {
     if (products?.nextCursor) {
-      setPrevCursors((previousCursors) => cursor ? [...previousCursors, cursor] : previousCursors) // Store previous cursor
+      setPrevCursors((previousCursors) => cursor ? [...previousCursors, cursor] : previousCursors)
       setCursor(products.nextCursor)
     }
   }
 
   const handlePrevPage = () => {
-    const prevCursor = prevCursors.pop() // Get last cursor
+    const prevCursor = prevCursors.pop()
     setCursor(prevCursor)
   }
-
-  const handleSelectLimit = (event: React.ChangeEvent<{ value: unknown }>) => {
-    setLimit(event.target.value as number)
-    setCursor(undefined) // Reset cursor when limit changes
-  }
   
-  console.log(products)
   return (
     <>
       <Head>
@@ -70,7 +66,6 @@ export default function ProductsPage() {
           <Button variant="outlined" onClick={() => setSearch(dirtySearch !== '' ? dirtySearch : '')}>Search</Button>
         </form>
 
-
         {isLoading ? 
           (<TableSkeletonLoader columns={5} />) :
           (<>
@@ -84,7 +79,7 @@ export default function ProductsPage() {
                   defaultValue={3}
                   value={limit}
                   label="Rows per page"
-                  onChange={(e) => setLimit(Number(e.target.value))}
+                  onChange={(e) => (setLimit(Number(e.target.value)), setCursor(undefined))}
                 >
                   <MenuItem value={3}>3</MenuItem>
                   <MenuItem value={8}>8</MenuItem>
@@ -99,7 +94,11 @@ export default function ProductsPage() {
         }
 
         {openCreateModal && (
-          <ProductsFormModal open={openCreateModal} onClose={() => setOpenCreateModal(false)} />
+          <ProductsFormModal 
+            open={openCreateModal} 
+            onClose={() => setOpenCreateModal(false)} 
+            onRefresh={handleRefreshProducts}
+          />
         )}
       </main>
     </>

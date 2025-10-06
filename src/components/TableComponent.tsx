@@ -90,7 +90,7 @@ type TableProps = {
 }
 
 export default function TableComponent({data}: TableProps) {
-    const [order, setOrder] = useState<Order>('asc');
+    const [order, setOrder] = useState<Order>('desc');
     const [orderBy, setOrderBy] = useState<keyof Product>('createdAt');
 
     const handleRequestSort = (
