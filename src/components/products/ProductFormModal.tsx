@@ -14,7 +14,7 @@ import {
 import { trpc } from '@/utils/trpc'
 import { createProductSchema, type CreateProductInput } from '@/schemas/productSchema'
 
-interface ProductsFormModalProps {
+type ProductsFormModalProps = {
   open: boolean
   onClose: () => void
   onSuccess?: () => void

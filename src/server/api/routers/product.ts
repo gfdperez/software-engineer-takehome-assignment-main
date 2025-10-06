@@ -5,7 +5,6 @@ import {
   getProductByIdSchema, 
   getProductsSchema 
 } from '@/schemas/productSchema'
-import { TRPCError } from '@trpc/server'
 
 export const productRouter = createTRPCRouter({
   // Get all products (excluding soft-deleted)

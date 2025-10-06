@@ -1,7 +1,12 @@
-import { Product, InventoryLocation } from "@/types";
-import { TableHeader } from "@/components/genericTable/GenericTable";
+import { Product, StockLevel, InventoryLocation } from "@/types";
 
-// Product Table Configuration
+// Generic types for table headers and data
+export interface TableHeader<T> {
+  id: keyof T;
+  label: string;
+  sortable?: boolean;
+}
+
 export const productTableHeaders: TableHeader<Product>[] = [
   { id: 'name', label: 'Name', sortable: true },
   { id: 'sku', label: 'SKU', sortable: true },
@@ -11,7 +16,6 @@ export const productTableHeaders: TableHeader<Product>[] = [
   { id: 'createdAt', label: 'Created At', sortable: true }
 ];
 
-// Custom cell renderer for products (optional)
 export const renderProductCell = (product: Product, key: keyof Product): React.ReactNode => {
   const value = product[key];
   
@@ -32,26 +36,31 @@ export const renderProductCell = (product: Product, key: keyof Product): React.R
   }
 };
 
-// Location Table Configuration (Example of reusability)
-export const locationTableHeaders: TableHeader<InventoryLocation>[] = [
-  { id: 'name', label: 'Location Name', sortable: true },
-  { id: 'address', label: 'Address', sortable: false },
-  { id: 'contactPerson', label: 'Contact Person', sortable: true },
-  { id: 'contactNumber', label: 'Phone', sortable: false },
-  { id: 'createdAt', label: 'Created At', sortable: true }
+export const stockLevelHeaders: TableHeader<StockLevel>[] = [
+  { id: 'location', label: 'Location', sortable: true },
+  { id: 'quantity', label: 'Quantity', sortable: true },
+  { id: 'minThreshold', label: 'Min Threshold', sortable: true },
+  { id: 'updatedAt', label: 'Last Updated', sortable: true },
 ];
 
-// Custom cell renderer for locations
-export const renderLocationCell = (location: InventoryLocation, key: keyof InventoryLocation): React.ReactNode => {
-  const value = location[key];
+// Custom cell renderer for stock levels
+export const renderStockLevelCell = (stockLevel: StockLevel, key: keyof StockLevel): React.ReactNode => {
+  const value = stockLevel[key];
   
   switch (key) {
-    case 'createdAt':
-      return value instanceof Date ? value.toLocaleDateString() : 
-             typeof value === 'string' ? new Date(value).toLocaleDateString() : '-';
-    case 'address':
-      return value && typeof value === 'string' ? 
-        (value.length > 40 ? `${value.substring(0, 40)}...` : value) : 'No address';
+    case 'location':
+      // Handle the nested location object
+      return stockLevel.location?.name || 'Unknown Location';
+    case 'quantity':
+      return typeof value === 'number' ? value.toLocaleString() : '-';
+    case 'minThreshold':
+      return typeof value === 'number' ? value.toLocaleString() : 'Not set';
+    case 'updatedAt':
+      return value instanceof Date ? 
+        (<div className="flex flex-col">
+          <span>{value.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12:true })}</span>
+          <span>{value.toLocaleDateString([], { year: 'numeric', month: 'long', day: 'numeric' })}</span>
+        </div>) : '-';
     default:
       return value?.toString() || '-';
   }

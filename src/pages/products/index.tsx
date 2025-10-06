@@ -7,8 +7,9 @@ import GenericTable from '@/components/genericTable/GenericTable'
 import TableSkeletonLoader from '@/components/TableSkeletonLoader'
 import AddCircleIcon from '@mui/icons-material/AddCircle';
 import type { Product } from '@/types'
-import ProductsFormModal from '@/components/products/ProductsFormModal'
+import ProductsFormModal from '@/components/products/ProductFormModal'
 import { productTableHeaders, renderProductCell } from '@/config/TableConfigs'
+import ProductViewModal from '@/components/products/ProductViewModal'
 
 export default function ProductsPage() {
   const [search, setSearch] = useState('')
@@ -17,6 +18,8 @@ export default function ProductsPage() {
   const [prevCursors, setPrevCursors] = useState<string[]>([])
   const [dirtySearch, setDirtySearch] = useState('')
   const [openCreateModal, setOpenCreateModal] = useState(false)
+  const [openViewModal, setOpenViewModal] = useState(false)
+  const [selectedProductId, setSelectedProductId] = useState<string | null>(null)
 
   const utils = trpc.useUtils()
   const { data: products, isLoading } = trpc.product.getAll.useQuery({ 
@@ -42,7 +45,17 @@ export default function ProductsPage() {
     const prevCursor = prevCursors.pop()
     setCursor(prevCursor)
   }
-  
+
+  const handleRowClick = (product: Product) => {
+    setSelectedProductId(product.id)
+    setOpenViewModal(true)
+  }
+
+  const handleCloseViewModal = () => {
+    setOpenViewModal(false)
+    setSelectedProductId(null)
+  }
+
   return (
     <>
       <Head>
@@ -77,6 +90,7 @@ export default function ProductsPage() {
               defaultOrderBy="createdAt"
               defaultOrder="desc"
               renderCell={(item, key) => renderProductCell(item as Product, key as keyof Product)}
+              onRowClick={(item) => handleRowClick(item as Product)}
             />
             <div className='flex items-center gap-2 mt-4 justify-end'>
               <FormControl size='small'>
@@ -106,6 +120,14 @@ export default function ProductsPage() {
             open={openCreateModal} 
             onClose={() => setOpenCreateModal(false)} 
             onRefresh={handleRefreshProducts}
+          />
+        )}
+
+        {openViewModal && selectedProductId && (
+          <ProductViewModal 
+            productId={selectedProductId} 
+            open={openViewModal} 
+            onClose={handleCloseViewModal} 
           />
         )}
       </main>

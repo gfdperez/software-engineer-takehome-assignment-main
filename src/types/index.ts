@@ -37,6 +37,7 @@ export type StockLevel = {
   updatedAt: Date
   productId: string
   locationId: string
+  location?: InventoryLocation // Optional because it's included via Prisma relations
 }
 
 // You can add more types as needed
