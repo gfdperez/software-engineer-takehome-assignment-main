@@ -2,11 +2,13 @@ import Head from 'next/head'
 import Link from 'next/link'
 import { useState } from 'react'
 import { trpc } from '@/utils/trpc'
-import TableComponent from '@/components/TableComponent'
 import { Button, FormControl, InputLabel, MenuItem, OutlinedInput, Select } from '@mui/material'
+import GenericTable from '@/components/genericTable/GenericTable'
 import TableSkeletonLoader from '@/components/TableSkeletonLoader'
 import AddCircleIcon from '@mui/icons-material/AddCircle';
-import ProductsFormModal from '@/components/productsComponent/productsFormModal'
+import type { Product } from '@/types'
+import ProductsFormModal from '@/components/products/ProductsFormModal'
+import { productTableHeaders, renderProductCell } from '@/config/TableConfigs'
 
 export default function ProductsPage() {
   const [search, setSearch] = useState('')
@@ -67,9 +69,15 @@ export default function ProductsPage() {
         </form>
 
         {isLoading ? 
-          (<TableSkeletonLoader columns={5} />) :
+          (<TableSkeletonLoader columns={6} />) :
           (<>
-            <TableComponent data={products?.products || []} />
+            <GenericTable 
+              data={products?.products || []} 
+              headers={productTableHeaders}
+              defaultOrderBy="createdAt"
+              defaultOrder="desc"
+              renderCell={(item, key) => renderProductCell(item as Product, key as keyof Product)}
+            />
             <div className='flex items-center gap-2 mt-4 justify-end'>
               <FormControl size='small'>
                 <InputLabel id="demo-simple-select-label">Rows</InputLabel>
