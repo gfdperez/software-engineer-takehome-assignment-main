@@ -56,6 +56,14 @@ export default function ProductsPage() {
     setSelectedProductId(null)
   }
 
+  const handleRowEdit = (product: Product) => {
+    console.log("Edit product:", product);
+  }
+
+  const handleRowDelete = (product: Product) => {
+    console.log("Delete product:", product);
+  }
+
   return (
     <>
       <Head>
@@ -87,10 +95,13 @@ export default function ProductsPage() {
             <GenericTable 
               data={products?.products || []} 
               headers={productTableHeaders}
+              editable={true}
               defaultOrderBy="createdAt"
               defaultOrder="desc"
               renderCell={(item, key) => renderProductCell(item as Product, key as keyof Product)}
               onRowClick={(item) => handleRowClick(item as Product)}
+              onRowEdit={(item) => handleRowEdit(item as Product)}
+              onRowDelete={(item) => handleRowDelete(item as Product)}
             />
             <div className='flex items-center gap-2 mt-4 justify-end'>
               <FormControl size='small'>

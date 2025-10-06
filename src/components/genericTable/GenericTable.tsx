@@ -1,14 +1,9 @@
+import { TableHeader } from "@/config/TableConfigs";
 import { getComparator, Order } from "@/utils/genericTable/genericTableUtils";
-import { Box, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TableSortLabel } from "@mui/material"
+import { Box, Button, ButtonGroup, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TableSortLabel } from "@mui/material"
 import { visuallyHidden } from '@mui/utils';
 import { useState } from "react";
-
-// Generic types for table headers and data
-export interface TableHeader<T> {
-  id: keyof T;
-  label: string;
-  sortable?: boolean;
-}
+import { Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
 
 // Generic table head component
 interface GenericTableHeadProps<T> {
@@ -16,9 +11,10 @@ interface GenericTableHeadProps<T> {
   onRequestSort: (event: React.MouseEvent<unknown>, property: keyof T) => void;
   order: Order;
   orderBy: keyof T;
+  editable?: boolean;
 }
 
-function GenericTableHead<T>({ headers, order, orderBy, onRequestSort }: GenericTableHeadProps<T>) {
+function GenericTableHead<T>({ headers, order, orderBy, onRequestSort, editable }: GenericTableHeadProps<T>) {
   const createSortHandler =
     (property: keyof T) => (event: React.MouseEvent<unknown>) => {
       onRequestSort(event, property);
@@ -52,6 +48,7 @@ function GenericTableHead<T>({ headers, order, orderBy, onRequestSort }: Generic
             )}
           </TableCell>
         ))}
+        {editable && <TableCell padding="none" align="center"></TableCell>}
       </TableRow>
     </TableHead>
   );
@@ -65,7 +62,10 @@ interface GenericTableProps<T> {
   defaultOrder?: Order;
   renderCell?: (item: T, key: keyof T) => React.ReactNode;
   onRowClick?: (item: T) => void;
+  onRowEdit?: (item: T) => void;
+  onRowDelete?: (item: T) => void;
   minWidth?: number;
+  editable?: boolean;
 }
 
 export default function GenericTable<T extends Record<string, any>>({
@@ -75,7 +75,10 @@ export default function GenericTable<T extends Record<string, any>>({
   defaultOrder = 'desc',
   renderCell,
   onRowClick,
-  minWidth = 650
+  onRowEdit,
+  onRowDelete,
+  minWidth = 650,
+  editable = false
 }: GenericTableProps<T>) {
   const [order, setOrder] = useState<Order>(defaultOrder);
   const [orderBy, setOrderBy] = useState<keyof T>(defaultOrderBy);
@@ -122,19 +125,28 @@ export default function GenericTable<T extends Record<string, any>>({
           order={order}
           orderBy={orderBy}
           onRequestSort={handleRequestSort}
+          editable={editable}
         />
         <TableBody>
           {sortedData.map((item, index) => (
             <TableRow
               key={item.id || index}
-              onClick={onRowClick ? () => onRowClick(item) : undefined}
-              sx={onRowClick ? { cursor: 'pointer', '&:hover': { backgroundColor: 'action.hover' } } : {}}
             >
               {headers.map((header) => (
-                <TableCell key={String(header.id)} align={'left'}>
-                  {cellRenderer(item, header.id)}
+                <TableCell 
+                  key={String(header.id)} align={'left'}
+                  onClick={onRowClick ? () => onRowClick(item) : undefined}
+                  sx={onRowClick ? { cursor: 'pointer', '&:hover': { backgroundColor: 'action.hover' } } : {}}> 
+                    {cellRenderer(item, header.id)}
                 </TableCell>
               ))}
+              {editable && 
+                (<TableCell sx={{ padding: '12px 8px' }} align="center">
+                  <ButtonGroup orientation="vertical" variant="outlined" color="primary" size="small" aria-label="Basic button group">
+                    <Button onClick={onRowEdit ? () => onRowEdit(item) : undefined}><EditIcon /></Button>
+                    <Button onClick={onRowDelete ? () => onRowDelete(item) : undefined}><DeleteIcon /></Button>
+                  </ButtonGroup>
+                </TableCell>)}
             </TableRow>
           ))}
         </TableBody>
