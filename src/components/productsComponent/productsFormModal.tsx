@@ -9,6 +9,7 @@ import {
   TextField,
   Button,
   Box,
+  Alert,
 } from '@mui/material'
 import { trpc } from '@/utils/trpc'
 import { createProductSchema, type CreateProductInput } from '@/schemas/productSchema'
@@ -25,6 +26,7 @@ export default function ProductsFormModal({
   onSuccess 
 }: ProductsFormModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [inputError, setInputError] = useState<string | null>(null);
   
   // Use the shared schema with react-hook-form
   const {
@@ -38,19 +40,31 @@ export default function ProductsFormModal({
 
   // tRPC mutation
   const createProductMutation = trpc.product.create.useMutation({
-    onSuccess: () => {
-      reset()
-      onSuccess?.()
-      onClose()
-      setIsSubmitting(false)
+    onSuccess: (result) => {
+      // Check if the result indicates success
+      if (result.success) {
+        reset()
+        onSuccess?.()
+        onClose()
+        setIsSubmitting(false)
+      } else {
+        // Handle returned error (not thrown error)
+        setInputError(result.error || 'An error occurred')
+        setIsSubmitting(false)
+      }
     },
     onError: (error) => {
-      console.error('Error creating product:', error)
+      // This should rarely be called now since we return errors instead of throwing
+      setInputError(error.message);
+      console.error('Unexpected error creating product:', error)
       setIsSubmitting(false)
     },
   })
 
+  console.log("==========> createProductMutation:", createProductMutation);
+
   const onSubmit = (data: CreateProductInput) => {
+    setInputError(null);
     setIsSubmitting(true)
     createProductMutation.mutate(data)
   }
@@ -74,6 +88,7 @@ export default function ProductsFormModal({
       }}
     >
       <DialogTitle sx={{fontWeight: 'bold', fontSize: '1.5rem'}}>Add New Product</DialogTitle>
+        {inputError && (<Alert severity="error" sx={{ mx: 2 }}>{inputError}</Alert>)}
       <DialogContent>
         <Box component="form">
           <TextField
