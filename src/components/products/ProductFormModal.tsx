@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import {
@@ -13,22 +13,35 @@ import {
 } from '@mui/material'
 import { trpc } from '@/utils/trpc'
 import { createProductSchema, type CreateProductInput } from '@/schemas/productSchema'
+import { Product } from '@/types'
 
 type ProductsFormModalProps = {
   open: boolean
   onClose: () => void
   onSuccess?: () => void
   onRefresh?: () => void
+  product?: Product | null // For editing mode
+  mode?: 'create' | 'edit'
+}
+
+type HandleSuccessResult = { 
+  success: boolean;
+  error: string | null;
+  errorType: string | null;
+  data: Product | null;
 }
 
 export default function ProductsFormModal({ 
   open, 
   onClose, 
   onSuccess,
-  onRefresh
+  onRefresh,
+  product,
+  mode = 'create'
 }: ProductsFormModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [inputError, setInputError] = useState<string | null>(null);
+  const isEditMode = mode === 'edit' && product
   
   const {
     register,
@@ -37,20 +50,37 @@ export default function ProductsFormModal({
     reset,
   } = useForm<CreateProductInput>({
     resolver: zodResolver(createProductSchema),
+    defaultValues: isEditMode ? {
+      name: product.name,
+      sku: product.sku,
+      description: product.description || '',
+      price: product.price,
+      barcode: product.barcode || '',
+    } : {
+      name: '',
+      sku: '',
+      description: '',
+      price: 0,
+      barcode: '',
+    },
   })
+
+  const handleSuccess = (result: HandleSuccessResult) => {
+    if (result.success) {
+      reset()
+      onSuccess?.()
+      onRefresh?.()
+      onClose()
+      setIsSubmitting(false)
+    } else {
+      setInputError(result.error || 'An error occurred')
+      setIsSubmitting(false)
+    }
+  }
 
   const createProductMutation = trpc.product.create.useMutation({
     onSuccess: (result) => {
-      if (result.success) {
-        reset()
-        onSuccess?.()
-        onRefresh?.()
-        onClose()
-        setIsSubmitting(false)
-      } else {
-        setInputError(result.error || 'An error occurred')
-        setIsSubmitting(false)
-      }
+      handleSuccess(result)
     },
     onError: (error) => {
       setInputError(error.message);
@@ -59,16 +89,53 @@ export default function ProductsFormModal({
     },
   })
 
+  const updateProductMutation = trpc.product.update.useMutation({
+      onSuccess: (result) => {
+      handleSuccess(result)
+    },
+      onError: (error) => {
+        console.error('Error updating product:', error)
+        setIsSubmitting(false)
+      },
+    })
+
   const onSubmit = (data: CreateProductInput) => {
     setInputError(null);
     setIsSubmitting(true)
-    createProductMutation.mutate(data)
+    if (isEditMode) {
+      updateProductMutation.mutate({ id: product.id, ...data })
+    } else {
+      createProductMutation.mutate(data)
+    }
   }
 
   const handleClose = () => {
     reset()
     onClose()
   }
+
+  // Reset form when product changes or modal opens
+  useEffect(() => {
+    if (open) {
+      if (isEditMode && product) {
+        reset({
+          name: product.name,
+          sku: product.sku,
+          description: product.description || '',
+          price: product.price,
+          barcode: product.barcode || '',
+        })
+      } else {
+        reset({
+          name: '',
+          sku: '',
+          description: '',
+          price: 0,
+          barcode: '',
+        })
+      }
+    }
+  }, [open, product, isEditMode, reset])
 
   return (
     <Dialog 
@@ -83,7 +150,9 @@ export default function ProductsFormModal({
         }
       }}
     >
-      <DialogTitle sx={{fontWeight: 'bold', fontSize: '1.5rem'}}>Add New Product</DialogTitle>
+      <DialogTitle sx={{fontWeight: 'bold', fontSize: '1.5rem'}}>
+        {isEditMode ? 'Edit Product' : 'Add New Product'}
+      </DialogTitle>
         {inputError && (<Alert severity="error" sx={{ mx: 2 }}>{inputError}</Alert>)}
       <DialogContent>
         <Box component="form">
@@ -154,7 +223,10 @@ export default function ProductsFormModal({
           variant="contained"
           disabled={isSubmitting}
         >
-          {isSubmitting ? 'Adding...' : 'Add Product'}
+          {isSubmitting 
+            ? (isEditMode ? 'Updating...' : 'Adding...') 
+            : (isEditMode ? 'Update Product' : 'Add Product')
+          }
         </Button>
       </DialogActions>
     </Dialog>

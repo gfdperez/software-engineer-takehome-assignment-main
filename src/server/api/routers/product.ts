@@ -5,6 +5,7 @@ import {
   getProductByIdSchema, 
   getProductsSchema 
 } from '@/schemas/productSchema'
+import { checkForDuplicates } from '@/server/utils/productApiUtils'
 
 export const productRouter = createTRPCRouter({
   // Get all products (excluding soft-deleted)
@@ -75,65 +76,49 @@ export const productRouter = createTRPCRouter({
   create: publicProcedure
     .input(createProductSchema)
     .mutation(async ({ ctx, input }) => {
-      const duplicateChecks = await Promise.all([
-        // Check SKU duplication
-        ctx.prisma.product.findFirst({
-          where: {
-            sku: input.sku,
-            deletedAt: null,
-          },
-        }),
-        // Check barcode duplication (if provided)
-        input.barcode ? ctx.prisma.product.findFirst({
-          where: {
-            barcode: input.barcode,
-            deletedAt: null,
-          },
-        }) : null,
-        // Check exact name (optional business rule)
-        ctx.prisma.product.findFirst({
-          where: {
-            name: input.name,
-            deletedAt: null,
-          },
-        }),
-      ])
+      const duplicateResult = await checkForDuplicates(
+      ctx.prisma,
+      ctx.prisma.product,
+      [
+        {
+          field: 'sku',
+          value: input.sku,
+          required: true,
+          errorMessage: `A product with SKU "${input.sku}" already exists`,
+          errorType: 'DUPLICATE_SKU',
+        },
+        {
+          field: 'barcode',
+          value: input.barcode,
+          required: false,
+          errorMessage: `A product with barcode "${input.barcode}" already exists`,
+          errorType: 'DUPLICATE_BARCODE',
+        },
+        {
+          field: 'name',
+          value: input.name,
+          required: true,
+          errorMessage: `A product with the same name "${input.name}" already exists`,
+          errorType: 'DUPLICATE_PRODUCT',
+        },
+      ]
+    );
 
-      const [existingSku, existingBarcode, existingName] = duplicateChecks
-
-      // Handle different duplication scenarios by returning error objects
-      if (existingSku) {
-        return {
-          success: false,
-          error: `A product with SKU "${input.sku}" already exists`,
-          errorType: 'DUPLICATE_SKU' as const,
-          data: null,
-        }
-      }
-
-      if (existingBarcode && input.barcode) {
-        return {
-          success: false,
-          error: `A product with barcode "${input.barcode}" already exists`,
-          errorType: 'DUPLICATE_BARCODE' as const,
-          data: null,
-        }
-      }
-
-      if (existingName) {
-        return {
-          success: false,
-          error: `A product with the same name "${input.name}" already exists`,
-          errorType: 'DUPLICATE_PRODUCT' as const,
-          data: null,
-        }
-      }
+    // Return early if duplicates found
+    if (!duplicateResult.success) {
+      return {
+        success: false,
+        error: duplicateResult.error,
+        errorType: duplicateResult.errorType,
+        data: null,
+      };
+    }
       
       try {
         const product = await ctx.prisma.product.create({
           data: input,
         })
-        
+
         return {
           success: true,
           error: null,
@@ -148,6 +133,7 @@ export const productRouter = createTRPCRouter({
           data: null,
         }
       }
+      
     }),
 
   // Update a product
@@ -156,10 +142,69 @@ export const productRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const { id, ...productData } = input
 
-      return ctx.prisma.product.update({
+      
+    // Check for duplicates, excluding the current product
+    const duplicateResult = await checkForDuplicates(
+      ctx.prisma,
+      ctx.prisma.product,
+      [
+        {
+          field: 'sku',
+          value: productData.sku,
+          required: true,
+          errorMessage: `A product with SKU "${productData.sku}" already exists`,
+          errorType: 'DUPLICATE_SKU',
+          excludeId: id, // Exclude current product from check
+        },
+        {
+          field: 'barcode',
+          value: productData.barcode,
+          required: false,
+          errorMessage: `A product with barcode "${productData.barcode}" already exists`,
+          errorType: 'DUPLICATE_BARCODE',
+          excludeId: id,
+        },
+        {
+          field: 'name',
+          value: productData.name,
+          required: true,
+          errorMessage: `A product with the same name "${productData.name}" already exists`,
+          errorType: 'DUPLICATE_PRODUCT',
+          excludeId: id,
+        },
+      ]
+    );
+
+    // Return early if duplicates found
+    if (!duplicateResult.success) {
+      return {
+        success: false,
+        error: duplicateResult.error,
+        errorType: duplicateResult.errorType,
+        data: null,
+      };
+    }
+
+    try {
+      const product = await ctx.prisma.product.update({
         where: { id },
         data: productData,
-      })
+      });
+
+      return {
+        success: true,
+        error: null,
+        errorType: null,
+        data: product,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: 'Failed to update product. Please try again.',
+        errorType: 'DATABASE_ERROR' as const,
+        data: null,
+      };
+    }
     }),
 
   // Soft delete a product

@@ -19,8 +19,9 @@ export default function ProductsPage() {
   const [cursor, setCursor] = useState<string | undefined>(undefined)
   const [prevCursors, setPrevCursors] = useState<string[]>([])
   const [dirtySearch, setDirtySearch] = useState('')
-  const [openCreateModal, setOpenCreateModal] = useState(false)
   const [openViewModal, setOpenViewModal] = useState(false)
+  const [openCreateModal, setOpenCreateModal] = useState(false)
+  const [openEditModal, setOpenEditModal] = useState(false)
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null)
 
   const utils = trpc.useUtils()
@@ -70,7 +71,8 @@ export default function ProductsPage() {
   }
 
   const handleRowEdit = (product: Product) => {
-    console.log("Edit product:", product);
+    setOpenEditModal(true);
+    setSelectedProductId(product.id);
   }
 
   const handleRowDelete = (product: Product) => {
@@ -147,6 +149,14 @@ export default function ProductsPage() {
           </>)
         }
 
+        {openViewModal && selectedProductId && (
+          <ProductViewModal 
+            productId={selectedProductId} 
+            open={openViewModal} 
+            onClose={handleCloseViewModal} 
+          />
+        )}
+
         {openCreateModal && (
           <ProductsFormModal 
             open={openCreateModal} 
@@ -155,11 +165,13 @@ export default function ProductsPage() {
           />
         )}
 
-        {openViewModal && selectedProductId && (
-          <ProductViewModal 
-            productId={selectedProductId} 
-            open={openViewModal} 
-            onClose={handleCloseViewModal} 
+        {openEditModal && selectedProductId && (
+          <ProductsFormModal
+            open={openEditModal}
+            onClose={() => setOpenEditModal(false)}
+            onRefresh={handleRefreshProducts}
+            product={products?.products.find(p => p.id === selectedProductId) || null}
+            mode="edit"
           />
         )}
 
