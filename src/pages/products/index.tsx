@@ -1,6 +1,6 @@
 import Head from 'next/head'
 import Link from 'next/link'
-import { useState } from 'react'
+import { use, useEffect, useState } from 'react'
 import { trpc } from '@/utils/trpc'
 import { Button, FormControl, InputLabel, MenuItem, OutlinedInput, Select } from '@mui/material'
 import GenericTable from '@/components/genericTable/GenericTable'
@@ -12,6 +12,7 @@ import { productTableHeaders, renderProductCell } from '@/config/TableConfigs'
 import ProductViewModal from '@/components/products/ProductViewModal'
 import ConfirmationModal from '@/components/confirmationModal/ConfirmationModal'
 import { useConfirmationModal } from '@/hooks/useConfirmationModal'
+import ProductsEmptyState from '@/components/products/ProductsEmptyState'
 
 export default function ProductsPage() {
   const [search, setSearch] = useState('')
@@ -87,6 +88,14 @@ export default function ProductsPage() {
     );
   }
 
+  useEffect(() => {
+    if (dirtySearch === '') {
+      setSearch('')
+      setCursor(undefined)
+      setPrevCursors([])
+    }
+  }, [dirtySearch]);
+
   return (
     <>
       <Head>
@@ -107,46 +116,57 @@ export default function ProductsPage() {
 
         <form noValidate autoComplete="off" className='flex flex-col gap-2 sm:flex-row sm:items-center mb-4'>
           <FormControl size='small' sx={{ width: "100%" }}>
-            <OutlinedInput placeholder="Search Product (Name or SKU)" name='search' value={dirtySearch} onChange={(e) => setDirtySearch(e.target.value)} />
+            <OutlinedInput 
+              placeholder="Search Product (Name or SKU)" 
+              name='search' 
+              value={dirtySearch} 
+              onChange={(e) => setDirtySearch(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  setSearch(dirtySearch !== '' ? dirtySearch : '');
+                }
+              }}
+            />
           </FormControl>
           <Button variant="outlined" onClick={() => setSearch(dirtySearch !== '' ? dirtySearch : '')}>Search</Button>
         </form>
 
         {isLoading ? 
           (<TableSkeletonLoader columns={6} />) :
-          (<>
-            <GenericTable 
-              data={products?.products || []} 
-              headers={productTableHeaders}
-              editable={true}
-              defaultOrderBy="createdAt"
-              defaultOrder="desc"
-              renderCell={(item, key) => renderProductCell(item as Product, key as keyof Product)}
-              onRowClick={(item) => handleRowClick(item as Product)}
-              onRowEdit={(item) => handleRowEdit(item as Product)}
-              onRowDelete={(item) => handleRowDelete(item as Product)}
-            />
-            <div className='flex items-center gap-2 mt-4 justify-end'>
-              <FormControl size='small'>
-                <InputLabel id="demo-simple-select-label">Rows</InputLabel>
-                <Select
-                  labelId="demo-simple-select-label"
-                  id="demo-simple-select"
-                  defaultValue={3}
-                  value={limit}
-                  label="Rows per page"
-                  onChange={(e) => (setLimit(Number(e.target.value)), setCursor(undefined))}
-                >
-                  <MenuItem value={3}>3</MenuItem>
-                  <MenuItem value={8}>8</MenuItem>
-                  <MenuItem value={10}>10</MenuItem>
-                </Select>
-              </FormControl>
+            products?.products && products.products.length > 0 ? (<>
+              <GenericTable 
+                data={products?.products || []} 
+                headers={productTableHeaders}
+                editable={true}
+                defaultOrderBy="createdAt"
+                defaultOrder="desc"
+                renderCell={(item, key) => renderProductCell(item as Product, key as keyof Product)}
+                onRowClick={(item) => handleRowClick(item as Product)}
+                onRowEdit={(item) => handleRowEdit(item as Product)}
+                onRowDelete={(item) => handleRowDelete(item as Product)}
+              />
+              <div className='flex items-center gap-2 mt-4 justify-end'>
+                <FormControl size='small'>
+                  <InputLabel id="demo-simple-select-label">Rows</InputLabel>
+                  <Select
+                    labelId="demo-simple-select-label"
+                    id="demo-simple-select"
+                    defaultValue={3}
+                    value={limit}
+                    label="Rows per page"
+                    onChange={(e) => (setLimit(Number(e.target.value)), setCursor(undefined))}
+                  >
+                    <MenuItem value={3}>3</MenuItem>
+                    <MenuItem value={8}>8</MenuItem>
+                    <MenuItem value={10}>10</MenuItem>
+                  </Select>
+                </FormControl>
 
-              <Button variant="outlined" onClick={handlePrevPage}>Prev</Button>
-              <Button variant="contained" onClick={handleNextPage}>Next</Button>
-            </div>
-          </>)
+                <Button variant="outlined" onClick={handlePrevPage}>Prev</Button>
+                <Button variant="contained" onClick={handleNextPage}>Next</Button>
+              </div>
+            </>) : <ProductsEmptyState />
         }
 
         {openViewModal && selectedProductId && (
