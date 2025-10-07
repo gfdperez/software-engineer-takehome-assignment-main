@@ -4,12 +4,14 @@ import { useState } from 'react'
 import { trpc } from '@/utils/trpc'
 import { Button, FormControl, InputLabel, MenuItem, OutlinedInput, Select } from '@mui/material'
 import GenericTable from '@/components/genericTable/GenericTable'
-import TableSkeletonLoader from '@/components/TableSkeletonLoader'
+import TableSkeletonLoader from '@/components/skeletonLoader/TableSkeletonLoader'
 import AddCircleIcon from '@mui/icons-material/AddCircle';
 import type { Product } from '@/types'
 import ProductsFormModal from '@/components/products/ProductFormModal'
 import { productTableHeaders, renderProductCell } from '@/config/TableConfigs'
 import ProductViewModal from '@/components/products/ProductViewModal'
+import ConfirmationModal from '@/components/confirmationModal/ConfirmationModal'
+import { useConfirmationModal } from '@/hooks/useConfirmationModal'
 
 export default function ProductsPage() {
   const [search, setSearch] = useState('')
@@ -22,10 +24,21 @@ export default function ProductsPage() {
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null)
 
   const utils = trpc.useUtils()
+  const confirmation = useConfirmationModal()
   const { data: products, isLoading } = trpc.product.getAll.useQuery({ 
     limit, 
     cursor,
     search: search.trim() || undefined 
+  })
+
+  // Delete mutation
+  const deleteProductMutation = trpc.product.delete.useMutation({
+    onSuccess: () => {
+      handleRefreshProducts()
+    },
+    onError: (error) => {
+      console.error('Error deleting product:', error)
+    }
   })
 
   const handleRefreshProducts = () => {
@@ -61,7 +74,15 @@ export default function ProductsPage() {
   }
 
   const handleRowDelete = (product: Product) => {
-    console.log("Delete product:", product);
+    confirmation.openConfirmation(
+      async () => {
+        await deleteProductMutation.mutateAsync({ id: product.id })
+      },
+      {
+        actionType: 'delete',
+        itemName: product.name
+      }
+    );
   }
 
   return (
@@ -141,6 +162,14 @@ export default function ProductsPage() {
             onClose={handleCloseViewModal} 
           />
         )}
+
+        <ConfirmationModal
+          open={confirmation.isOpen}
+          onClose={confirmation.closeConfirmation}
+          onConfirm={confirmation.handleConfirm}
+          isLoading={confirmation.isLoading}
+          {...confirmation.config}
+        />
       </main>
     </>
   )
