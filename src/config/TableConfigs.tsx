@@ -5,15 +5,17 @@ export interface TableHeader<T> {
   id: keyof T;
   label: string;
   sortable?: boolean;
+  hideOnMobile?: boolean;
+  hideOnTablet?: boolean;
 }
 
 export const productTableHeaders: TableHeader<Product>[] = [
   { id: 'name', label: 'Name', sortable: true },
   { id: 'sku', label: 'SKU', sortable: true },
-  { id: 'description', label: 'Description', sortable: false },
   { id: 'price', label: 'Price', sortable: true },
-  { id: 'barcode', label: 'Barcode', sortable: false },
-  { id: 'createdAt', label: 'Created At', sortable: true }
+  { id: 'description', label: 'Description', sortable: false, hideOnMobile: true },
+  { id: 'barcode', label: 'Barcode', sortable: false, hideOnMobile: true, hideOnTablet: true },
+  { id: 'createdAt', label: 'Created At', sortable: true, hideOnMobile: true }
 ];
 
 export const renderProductCell = (product: Product, key: keyof Product): React.ReactNode => {

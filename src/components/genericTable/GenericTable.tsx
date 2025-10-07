@@ -29,6 +29,13 @@ function GenericTableHead<T>({ headers, order, orderBy, onRequestSort, editable 
             align={'left'}
             padding="normal"
             sortDirection={orderBy === header.id ? order : false}
+            sx={{
+              display: { 
+                xs: header.hideOnMobile ? 'none' : 'table-cell',
+                sm: header.hideOnTablet ? 'none' : 'table-cell',
+                md: 'table-cell'
+              }
+            }}
           >
             {header.sortable !== false ? (
               <TableSortLabel
@@ -118,39 +125,100 @@ export default function GenericTable<T extends Record<string, any>>({
   const cellRenderer = renderCell || defaultRenderCell;
 
   return (
-    <TableContainer component={Paper}>
-      <Table sx={{ minWidth }} aria-label="generic table">
-        <GenericTableHead 
-          headers={headers}
-          order={order}
-          orderBy={orderBy}
-          onRequestSort={handleRequestSort}
-          editable={editable}
-        />
-        <TableBody>
-          {sortedData.map((item, index) => (
-            <TableRow
-              key={item.id || index}
-            >
-              {headers.map((header) => (
-                <TableCell 
-                  key={String(header.id)} align={'left'}
-                  onClick={onRowClick ? () => onRowClick(item) : undefined}
-                  sx={onRowClick ? { cursor: 'pointer', '&:hover': { backgroundColor: 'action.hover' } } : {}}> 
+    <Box sx={{ width: '100%', overflowX: 'auto' }}>
+      <TableContainer 
+        component={Paper}
+        sx={{
+          minWidth: { xs: 320, sm: 600, md: minWidth },
+          maxWidth: '100%',
+          '& .MuiTableCell-root': {
+            fontSize: { xs: '0.75rem', sm: '0.875rem', md: '1rem' },
+            padding: { xs: '8px 4px', sm: '12px 8px', md: '16px' }
+          }
+        }}
+      >
+        <Table 
+          sx={{ 
+            minWidth: { xs: 320, sm: 600, md: minWidth },
+            tableLayout: { xs: 'auto', md: 'fixed' }
+          }} 
+          aria-label="generic table"
+        >
+          <GenericTableHead 
+            headers={headers}
+            order={order}
+            orderBy={orderBy}
+            onRequestSort={handleRequestSort}
+            editable={editable}
+          />
+          <TableBody>
+            {sortedData.map((item, index) => (
+              <TableRow
+                key={item.id || index}
+                sx={{
+                  '& .MuiTableCell-root': {
+                    borderBottom: { xs: '1px solid rgba(224, 224, 224, 1)', md: 'inherit' }
+                  }
+                }}
+              >
+                {headers.map((header) => (
+                  <TableCell 
+                    key={String(header.id)} 
+                    align={'left'}
+                    onClick={onRowClick ? () => onRowClick(item) : undefined}
+                    sx={{
+                      ...(onRowClick ? { 
+                        cursor: 'pointer', 
+                        '&:hover': { backgroundColor: 'action.hover' } 
+                      } : {}),
+                      display: { 
+                        xs: header.hideOnMobile ? 'none' : 'table-cell',
+                        sm: header.hideOnTablet ? 'none' : 'table-cell',
+                        md: 'table-cell'
+                      },
+                      maxWidth: { xs: '120px', sm: '150px', md: 'none' },
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: { xs: 'nowrap', md: 'normal' }
+                    }}
+                  > 
                     {cellRenderer(item, header.id)}
-                </TableCell>
-              ))}
-              {editable && 
-                (<TableCell sx={{ padding: '12px 8px' }} align="center">
-                  <ButtonGroup orientation="vertical" variant="outlined" color="primary" size="small" aria-label="Basic button group">
-                    <Button onClick={onRowEdit ? () => onRowEdit(item) : undefined}><EditIcon /></Button>
-                    <Button onClick={onRowDelete ? () => onRowDelete(item) : undefined}><DeleteIcon /></Button>
-                  </ButtonGroup>
-                </TableCell>)}
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </TableContainer>
+                  </TableCell>
+                ))}
+                {editable && 
+                  (<TableCell 
+                    sx={{ 
+                      padding: { xs: '8px 4px', md: '12px 8px' },
+                      minWidth: { xs: '80px', md: '120px' }
+                    }} 
+                    align="center"
+                  >
+                    <ButtonGroup 
+                      orientation="vertical" 
+                      variant="outlined" 
+                      color="primary" 
+                      size="small"
+                      sx={{
+                        '& .MuiButton-root': {
+                          minWidth: { xs: '32px', md: '40px' },
+                          padding: { xs: '4px', md: '8px' }
+                        }
+                      }}
+                    >
+                      <Button onClick={onRowEdit ? () => onRowEdit(item) : undefined}>
+                        <EditIcon sx={{ fontSize: { xs: '16px', md: '20px' } }} />
+                      </Button>
+                      <Button onClick={onRowDelete ? () => onRowDelete(item) : undefined}>
+                        <DeleteIcon sx={{ fontSize: { xs: '16px', md: '20px' } }} />
+                      </Button>
+                    </ButtonGroup>
+                  </TableCell>)
+                }
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
+    </Box>
   );
 }
