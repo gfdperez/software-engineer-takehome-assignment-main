@@ -5,9 +5,11 @@ const prisma = new PrismaClient()
 async function main() {
   console.log('🌱 Seeding database...')
 
-  // Create inventory locations
-  const warehouse1 = await prisma.inventoryLocation.create({
-    data: {
+  // Create inventory locations using upsert to avoid duplicates
+  const warehouse1 = await prisma.inventoryLocation.upsert({
+    where: { name: 'Main Warehouse' },
+    update: {},
+    create: {
       name: 'Main Warehouse',
       address: '123 Industrial Ave, City, State 12345',
       contactPerson: 'John Doe',
@@ -15,8 +17,10 @@ async function main() {
     },
   })
 
-  const warehouse2 = await prisma.inventoryLocation.create({
-    data: {
+  const warehouse2 = await prisma.inventoryLocation.upsert({
+    where: { name: 'Retail Store Downtown' },
+    update: {},
+    create: {
       name: 'Retail Store Downtown',
       address: '456 Main St, City, State 12345',
       contactPerson: 'Jane Smith',
@@ -24,8 +28,10 @@ async function main() {
     },
   })
 
-  const warehouse3 = await prisma.inventoryLocation.create({
-    data: {
+  const warehouse3 = await prisma.inventoryLocation.upsert({
+    where: { name: 'Distribution Center North' },
+    update: {},
+    create: {
       name: 'Distribution Center North',
       address: '789 Commerce Blvd, City, State 12345',
       contactPerson: 'Bob Johnson',
@@ -110,13 +116,22 @@ async function main() {
   ]
 
   for (const productData of products) {
-    const product = await prisma.product.create({
-      data: productData,
+    const product = await prisma.product.upsert({
+      where: { sku: productData.sku },
+      update: {},
+      create: productData,
     })
 
-    // Add stock levels for each location
-    await prisma.stockLevel.create({
-      data: {
+    // Add stock levels for each location using upsert
+    await prisma.stockLevel.upsert({
+      where: {
+        productId_locationId: {
+          productId: product.id,
+          locationId: warehouse1.id,
+        },
+      },
+      update: {},
+      create: {
         productId: product.id,
         locationId: warehouse1.id,
         quantity: Math.floor(Math.random() * 100) + 20, // Random quantity 20-120
@@ -124,8 +139,15 @@ async function main() {
       },
     })
 
-    await prisma.stockLevel.create({
-      data: {
+    await prisma.stockLevel.upsert({
+      where: {
+        productId_locationId: {
+          productId: product.id,
+          locationId: warehouse2.id,
+        },
+      },
+      update: {},
+      create: {
         productId: product.id,
         locationId: warehouse2.id,
         quantity: Math.floor(Math.random() * 50) + 10, // Random quantity 10-60
@@ -133,8 +155,15 @@ async function main() {
       },
     })
 
-    await prisma.stockLevel.create({
-      data: {
+    await prisma.stockLevel.upsert({
+      where: {
+        productId_locationId: {
+          productId: product.id,
+          locationId: warehouse3.id,
+        },
+      },
+      update: {},
+      create: {
         productId: product.id,
         locationId: warehouse3.id,
         quantity: Math.floor(Math.random() * 80) + 15, // Random quantity 15-95

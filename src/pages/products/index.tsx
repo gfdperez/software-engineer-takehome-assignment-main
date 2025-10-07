@@ -16,7 +16,7 @@ import ProductsEmptyState from '@/components/products/ProductsEmptyState'
 
 export default function ProductsPage() {
   const [search, setSearch] = useState('')
-  const [limit, setLimit] = useState(3)
+  const [limit, setLimit] = useState(5)
   const [cursor, setCursor] = useState<string | undefined>(undefined)
   const [prevCursors, setPrevCursors] = useState<string[]>([])
   const [dirtySearch, setDirtySearch] = useState('')
@@ -157,9 +157,9 @@ export default function ProductsPage() {
                     label="Rows per page"
                     onChange={(e) => (setLimit(Number(e.target.value)), setCursor(undefined))}
                   >
-                    <MenuItem value={3}>3</MenuItem>
-                    <MenuItem value={8}>8</MenuItem>
+                    <MenuItem value={5}>5</MenuItem>
                     <MenuItem value={10}>10</MenuItem>
+                    <MenuItem value={15}>15</MenuItem>
                   </Select>
                 </FormControl>
 

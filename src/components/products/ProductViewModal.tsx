@@ -50,7 +50,7 @@ export default function ProductViewModal({ productId, open, onClose }: ProductVi
             <DialogTitle>
                 <div className="flex flex-col justify-center sm:justify-between sm:gap-2">
                     <span className="font-sans font-bold text-2xl sm:text-4xl">{productDetails?.name}</span>
-                    <span className="font-sans text-green-500 text-xs sm:text-sm">Stock: {totalStock} in stock</span>
+                    <span className="font-sans text-blue-500 text-xs sm:text-sm">Stock: {totalStock} in stock</span>
                 </div>
             </DialogTitle>
             <DialogContent>
