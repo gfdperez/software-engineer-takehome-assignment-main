@@ -4,6 +4,8 @@ Hi there!
 
 Just a heads up, I wasn't able to finish the core features because I only had two available days to do it. Although, I was able to build the "Product Management" feature at least, and I'll talk more about it below.
 
+Also, to run this project locally, just use the same flow you have given in the template repo.
+
 ## Product Management Feature Notes
 
 **Completed Subfeatures**
