@@ -23,7 +23,7 @@ export const renderProductCell = (product: Product, key: keyof Product): React.R
   
   switch (key) {
     case 'price':
-      return typeof value === 'number' ? `$${value.toFixed(2)}` : '-';
+      return typeof value === 'number' ? `₱${value.toFixed(2)}` : '-';
     case 'createdAt':
       return value instanceof Date ? 
         (<div className="flex flex-col">
